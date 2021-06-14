@@ -1,0 +1,86 @@
+version: '3'
+services:
+  mica:
+    image: obiba/mica:4.5
+    ports:
+      - "8445:8445"
+      - "8082:8082"
+    links:
+      - mongo
+      - agate
+      - opal
+    environment:
+      - MICA_ADMINISTRATOR_PASSWORD=***
+      - MICA_ANONYMOUS_PASSWORD=***
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+    volumes:
+      - /obiba-conf/mica:/srv
+  mongo:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: administrator
+      MONGO_INITDB_ROOT_PASSWORD: ***
+    ports:
+      - 27018:27017
+    volumes:
+      - mongodb:/data/db
+  opal:
+    image: obiba/opal:4.1
+    ports:
+      - "8443:8443"
+      - "8080:8080"
+    links:
+      - mongo
+      - agate
+    environment:
+      - OPAL_ADMINISTRATOR_PASSWORD=***
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+    volumes:
+      - /obiba-conf/opal:/srv
+  agate:
+    image: obiba/agate:2.3
+    ports:
+      - "8444:8444"
+      - "8081:8081"
+    links:
+      - mongo
+    environment:
+      - AGATE_ADMINISTRATOR_PASSWORD=***
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - RECAPTCHA_SITE_KEY=***
+      - RECAPTCHA_SECRET_KEY=***
+    volumes:
+      - /obiba-conf/agate:/srv
+  mariadb:
+    image: mariadb
+    restart: always
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    volumes:
+      - mariadb:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=***
+      - MYSQL_PASSWORD=***
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+  nextcloud-app:
+    image: nextcloud
+    restart: always
+    ports:
+      - 9080:80
+    links:
+      - mariadb
+    volumes:
+      - nextcloud:/var/www/html
+    environment:
+      - MYSQL_PASSWORD=***
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=mariadb
+
+volumes:
+        mongodb:
+        mariadb:
+        nextcloud:
